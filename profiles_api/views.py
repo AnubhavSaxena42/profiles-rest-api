@@ -9,6 +9,7 @@ from rest_framework.authentication import TokenAuthentication
 from profiles_api import permissions
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
+from rest_framework.permissions import IsAuthenticatedOrReadOnly,IsAuthenticated
 
 class HelloApiView(APIView):
     """Test Api View"""
@@ -146,3 +147,28 @@ class UserLoginAPIView(ObtainAuthToken):
     """Handle creating user authentication tokens"""
 
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+
+
+class UserProfileFeedViewSet(viewsets.ModelViewSet):
+    """Handles creating reading and updating profile feed items"""
+    
+    authentication_classes = (TokenAuthentication,)
+    serializer_class = serializers.ProfileFeedItemSerializer
+    queryset = models.ProfileFeedItem.objects.all()
+    permission_classes = (IsAuthenticated,permissions.UpdateOwnProfile)
+    """permissions isAuthenticatedOrReadonly as the name suggests is used to enable other than read methods if
+       a user is authenticated, furthermore we pass our custom permission which is configured to ensure that the
+       authenticated user can only update their own statuses
+    """
+    def perform_create(self,serializer):
+        """Sets the user_profile to the logged in user"""
+        """Perform create is the function which we are overriding form the ModelViewSet Class
+           By default it receives the data serializes and validates it, then serialize.save() function is called
+           To Modify this behaviour we can use this function 
+        """
+        serializer.save(user_profile=self.request.user)
+
+
+
+
+
